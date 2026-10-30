@@ -1,5 +1,5 @@
 
-from datetime import datetime
+from datetime import date
 
 
 class Autor:
@@ -7,7 +7,7 @@ class Autor:
         self.id = id
         self.nome = nome
         self.obras: list[Titulo] = []
-        
+
     def adicionar_obra(self, titulo: "Titulo") -> None:
         if titulo not in self.obras:
             self.obras.append(titulo)
@@ -21,16 +21,16 @@ class Autor:
             titulo.autores.remove(self)
 
     def __repr__(self) -> str:
-        return f"Autor(id={self.id}, nome={self.nome!r})"
+        return f"Autor(id={self.id}, nome={self.nome})"
 
 
 class Genero:
     def __init__(self, id: int, nome: str):
         self.id = id
         self.nome = nome
-    
+
     def __repr__(self) -> str:
-        return f"Genero(id={self.id}, nome={self.nome!r})"
+        return f"Genero(id={self.id}, nome={self.nome})"
 
 
 class Titulo:
@@ -38,16 +38,27 @@ class Titulo:
         self,
         id: int,
         nome: str,
+        usuario: "Usuario",
         autores: list[Autor],
         generos: list[Genero],
         data_lancamento: str,
+        estado_conservacao: str,
+        descricao: str,
     ):
         self.id = id
         self.nome = nome
-        self.autores = autores
-        self.generos = generos
+        self.usuario = usuario
+        self.autores: list[Autor] = []
+        self.generos: list[Genero] = []
         self.data_lancamento = data_lancamento
-    
+        self.estado_conservacao = estado_conservacao
+        self.descricao = descricao
+        for autor in autores:
+            self.adicionar_autor(autor)
+        for genero in generos:
+            self.adicionar_genero(genero)
+        usuario.adicionar_titulo_biblioteca(self)
+
     def adicionar_autor(self, autor: Autor) -> None:
         if autor not in self.autores:
             self.autores.append(autor)
@@ -75,18 +86,18 @@ class Titulo:
         return genero in self.generos
 
     def __repr__(self) -> str:
-        return f"Titulo(id={self.id}, nome={self.nome!r})"
+        return f"Titulo(id={self.id}, nome={self.nome})"
 
 
 class Usuario:
-    def __init__(self, nome: str, email: str, telefone: str, endereco: str):
+    def __init__(self, nome: str, email: str, telefone: str, cep: str):
         self.nome = nome
-        self.__email = email
+        self.set_email(email)
         self.telefone = telefone
-        self.endereco = endereco
+        self.cep = cep
         self.biblioteca: list[Titulo] = []
         self.favoritos: list[Titulo] = []
-        
+
     def get_email(self) -> str:
         return self.__email
 
@@ -99,6 +110,7 @@ class Usuario:
         if titulo in self.biblioteca:
             raise ValueError("Título já está na biblioteca.")
         self.biblioteca.append(titulo)
+        titulo.usuario = self
 
     def remover_titulo_biblioteca(self, titulo: Titulo) -> None:
         if titulo not in self.biblioteca:
@@ -118,84 +130,81 @@ class Usuario:
         if titulo in self.favoritos:
             self.favoritos.remove(titulo)
 
-    def publicar_proposta(
+    def fazer_proposta(
         self,
-        titulos_requeridos: list[Titulo],
-        titulos_propostos: list[Titulo],
+        titulo_desejado: Titulo,
+        titulos_oferecidos: list[Titulo],
+        observacao: str = "",
     ) -> "Proposta":
-        if not titulos_propostos or not titulos_requeridos:
-            raise ValueError("Informe ao menos um título proposto e um requerido.")
-        for titulo in titulos_propostos:
+        if not titulos_oferecidos:
+            raise ValueError("Informe ao menos um título oferecido.")
+        for titulo in titulos_oferecidos:
             if titulo not in self.biblioteca:
-                raise ValueError(f"Você não possui o título {titulo.nome!r}.")
+                raise ValueError(f"Você não possui o título {titulo.nome}.")
         return Proposta(
-            anunciante=self,
-            titulos_propostos=titulos_propostos,
-            titulos_requeridos=titulos_requeridos,
-            data_publicacao=datetime.now(),
+            interessado=self,
+            titulo_desejado=titulo_desejado,
+            titulos_oferecidos=titulos_oferecidos,
+            observacao=observacao,
+            data_criacao=date.today(),
         )
 
     def __repr__(self) -> str:
-        return f"Usuario(nome={self.nome!r})"
+        return f"Usuario(nome={self.nome})"
 
 
 class Proposta:
     def __init__(
         self,
-        anunciante: Usuario,
-        titulos_propostos: list[Titulo],
-        titulos_requeridos: list[Titulo],
-        data_publicacao: datetime
+        interessado: Usuario,
+        titulo_desejado: Titulo,
+        titulos_oferecidos: list[Titulo],
+        observacao: str,
+        data_criacao: date,
     ):
-        self.anunciante = anunciante
-        self.titulos_propostos = titulos_propostos
-        self.titulos_requeridos = titulos_requeridos
-        self.data_publicacao = data_publicacao
-        self.interessados: list[Usuario] = []
-        self.status = "aberta"
-        
-    def esta_aberta(self) -> bool:
-        return self.status == "aberta"
+        self.interessado = interessado
+        self.titulo_desejado = titulo_desejado
+        self.titulos_oferecidos = titulos_oferecidos
+        self.observacao = observacao
+        self.data_criacao = data_criacao
+        self.situacao = "pendente"
 
-    def demonstrar_interesse(self, usuario: Usuario) -> None:
-        if not self.esta_aberta():
-            raise ValueError("A proposta não está aberta.")
-        if usuario is self.anunciante:
-            raise ValueError("O anunciante não pode se interessar pela própria proposta.")
-        if usuario not in self.interessados:
-            self.interessados.append(usuario)
+    def esta_pendente(self) -> bool:
+        return self.situacao == "pendente"
 
-    def remover_interesse(self, usuario: Usuario) -> None:
-        if usuario in self.interessados:
-            self.interessados.remove(usuario)
+    def aceitar_proposta(self, usuario: Usuario) -> None:
+        self.__validar_dono(usuario)
+        self.__trocar_titulos()
+        self.situacao = "aceita"
 
-    def fechar_proposta(self, interessado: Usuario) -> None:
-        if not self.esta_aberta():
-            raise ValueError("A proposta não está aberta.")
-        if interessado not in self.interessados:
-            raise ValueError("Usuário não demonstrou interesse nesta proposta.")
-        self.__trocar_titulos(interessado)
-        self.status = "fechada"
+    def recusar_proposta(self, usuario: Usuario) -> None:
+        self.__validar_dono(usuario)
+        self.situacao = "recusada"
 
-    def cancelar_proposta(self) -> None:
-        if not self.esta_aberta():
-            raise ValueError("A proposta não está aberta.")
-        self.status = "cancelada"
+    def cancelar_proposta(self, usuario: Usuario) -> None:
+        if not self.esta_pendente():
+            raise ValueError("A proposta não está pendente.")
+        if usuario is not self.interessado:
+            raise ValueError("Apenas o interessado pode cancelar a proposta.")
+        self.situacao = "cancelada"
 
-    def __trocar_titulos(self, interessado: Usuario) -> None:
-        for titulo in self.titulos_propostos:
-            if titulo not in self.anunciante.biblioteca:
-                raise ValueError(f"Anunciante não possui mais {titulo.nome!r}.")
-        for titulo in self.titulos_requeridos:
-            if titulo not in interessado.biblioteca:
-                raise ValueError(f"Interessado não possui {titulo.nome!r}.")
+    def __validar_dono(self, usuario: Usuario) -> None:
+        if not self.esta_pendente():
+            raise ValueError("A proposta não está pendente.")
+        if usuario is not self.titulo_desejado.usuario:
+            raise ValueError("Apenas o dono do título pode responder a proposta.")
 
-        for titulo in self.titulos_propostos:
-            self.anunciante.remover_titulo_biblioteca(titulo)
-            interessado.adicionar_titulo_biblioteca(titulo)
-        for titulo in self.titulos_requeridos:
-            interessado.remover_titulo_biblioteca(titulo)
-            self.anunciante.adicionar_titulo_biblioteca(titulo)
+    def __trocar_titulos(self) -> None:
+        dono = self.titulo_desejado.usuario
+        for titulo in self.titulos_oferecidos:
+            if titulo not in self.interessado.biblioteca:
+                raise ValueError(f"Interessado não possui mais {titulo.nome}.")
+
+        dono.remover_titulo_biblioteca(self.titulo_desejado)
+        self.interessado.adicionar_titulo_biblioteca(self.titulo_desejado)
+        for titulo in self.titulos_oferecidos:
+            self.interessado.remover_titulo_biblioteca(titulo)
+            dono.adicionar_titulo_biblioteca(titulo)
 
     def __repr__(self) -> str:
-        return f"Proposta(anunciante={self.anunciante.nome!r}, status={self.status!r})"
+        return f"Proposta(interessado={self.interessado.nome}, situacao={self.situacao})"
