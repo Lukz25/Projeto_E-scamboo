@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from classes import Usuario
+from arquivoClasses.classes import Usuario
 
 bp_usuario = Blueprint("/usuario/", "__name__", url_prefix= "/usuario")
 

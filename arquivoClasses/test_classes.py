@@ -1,7 +1,7 @@
 import unittest
 from datetime import date
 
-from arquivoClasses import Autor, Genero, Titulo, Usuario
+from arquivoClasses.classes import Autor, Genero, Titulo, Usuario
 
 class TestAutor(unittest.TestCase):
     def setUp(self):
