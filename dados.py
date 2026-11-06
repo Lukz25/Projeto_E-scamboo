@@ -13,7 +13,7 @@ class Dados:
         self.autores = {}
         self.generos = {}
         self.titulos = {}
-        self.propostas = {}
+        self.propostas = []
 
         
 
@@ -71,6 +71,10 @@ class Dados:
 
         self.propostas.append(bruno.fazer_proposta(self.titulos[1], [self.titulos[2]], "Troco o Brás Cubas pelo Dom Casmurro."))
         self.propostas.append(carla.fazer_proposta(self.titulos[8], [self.titulos[7]], "Topa trocar pelo 1984?"))
+
+
+dados = Dados()
+dados.carregar_dados_iniciais()
 
 
 

@@ -6,6 +6,7 @@ from rotas.routes_titulo import bp_titulo
 from rotas.routes_usuario import bp_usuario
 
 app = Flask(__name__)
+app.secret_key = "e-scamboo-chave-secreta"
 
 app.register_blueprint(bp_usuario)
 app.register_blueprint(bp_autor)
