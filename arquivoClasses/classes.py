@@ -1,7 +1,6 @@
 
 from datetime import date
 
-
 class Autor:
     def __init__(self, id: int, nome: str):
         self.id = id
@@ -90,9 +89,10 @@ class Titulo:
 
 
 class Usuario:
-    def __init__(self, nome: str, email: str, telefone: str, cep: str):
+    def __init__(self, nome: str, email: str, senha: str, telefone: str, cep: str):
         self.nome = nome
         self.set_email(email)
+        self.__senha = senha
         self.telefone = telefone
         self.cep = cep
         self.biblioteca: list[Titulo] = []
@@ -105,6 +105,9 @@ class Usuario:
         if "@" not in novo_email:
             raise ValueError("E-mail inválido.")
         self.__email = novo_email
+
+    def verificar_senha(self, senha: str) -> bool:
+        return self.__senha == senha
 
     def adicionar_titulo_biblioteca(self, titulo: Titulo) -> None:
         if titulo in self.biblioteca:

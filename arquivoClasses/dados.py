@@ -15,8 +15,6 @@ class Dados:
         self.titulos = {}
         self.propostas = []
 
-        
-
     def carregar_dados_iniciais(self) -> None:
         self.usuarios.clear()
         self.autores.clear()
@@ -24,10 +22,10 @@ class Dados:
         self.titulos.clear()
         self.propostas.clear()
 
-        ana = Usuario("Ana Souza", "ana@example.com", "(11) 90000-0001", "01001-000")
-        bruno = Usuario("Bruno Lima", "bruno@example.com", "(11) 90000-0002", "04538-133")
-        carla = Usuario("Carla Mendes", "carla@example.com", "(21) 90000-0003", "20040-020")
-        diego = Usuario("Diego Rocha", "diego@example.com", "(31) 90000-0004", "30130-010")
+        ana = Usuario("Ana Souza", "ana@example.com", "ana123", "(11) 90000-0001", "01001-000")
+        bruno = Usuario("Bruno Lima", "bruno@example.com", "bruno123", "(11) 90000-0002", "04538-133")
+        carla = Usuario("Carla Mendes", "carla@example.com", "carla123", "(21) 90000-0003", "20040-020")
+        diego = Usuario("Diego Rocha", "diego@example.com", "diego123", "(31) 90000-0004", "30130-010")
         for usuario in [ana, bruno, carla, diego]:
             self.usuarios[usuario.get_email()] = usuario
 

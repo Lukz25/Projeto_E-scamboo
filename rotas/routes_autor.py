@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from arquivoClasses.classes import Autor
-from dados import dados
+from arquivoClasses.dados import dados
 
 bp_autor = Blueprint("/autor/", "__name__", url_prefix= "/autor")
 
@@ -58,3 +58,23 @@ def remover(id):
 
     del dados.autores[id]
     return jsonify({'mensagem': 'Autor removido.'}), 200
+
+@bp_autor.route("/<int:id>/obras/<int:titulo_id>", methods=['POST'])
+def adicionar_obra(id, titulo_id):
+    autor = dados.autores.get(id)
+    titulo = dados.titulos.get(titulo_id)
+    if autor is None or titulo is None:
+        return jsonify({'erro': 'Autor ou título não encontrado.'}), 404
+
+    autor.adicionar_obra(titulo)
+    return jsonify(autor_para_json(autor)), 200
+
+@bp_autor.route("/<int:id>/obras/<int:titulo_id>", methods=['DELETE'])
+def remover_obra(id, titulo_id):
+    autor = dados.autores.get(id)
+    titulo = dados.titulos.get(titulo_id)
+    if autor is None or titulo is None:
+        return jsonify({'erro': 'Autor ou título não encontrado.'}), 404
+
+    autor.remover_obra(titulo)
+    return jsonify(autor_para_json(autor)), 200
