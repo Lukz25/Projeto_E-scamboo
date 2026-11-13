@@ -1,12 +1,14 @@
 import sqlite3
-import json
 from typing import Any, Iterable
 import os
+
+PASTA_PROJETO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 class Banco:
 
     def __init__(self):
-        self.__caminho = "E-scamboo.db"
+        self.__caminho = os.path.join(PASTA_PROJETO, "E-scamboo.db")
+        self.__script = os.path.join(PASTA_PROJETO, "banco", "script.sql")
         self.connection = None
 
 
@@ -18,7 +20,7 @@ class Banco:
         
         try:
             self.__Conectar()
-            with open("banco/script.sql", "r", encoding="utf-8") as f:
+            with open(self.__script, "r", encoding="utf-8") as f:
                 self.connection.executescript(f.read())
 
             self.connection.commit()
@@ -67,12 +69,11 @@ class Banco:
             cursor.execute(comando, parameters)
 
             if(busca == True and cursor.description is not None):
-                res = [dict(row) for row in cursor.fetchall()]
-                return json.dumps(res, ensure_ascii=False, indent=2)
+                return [dict(row) for row in cursor.fetchall()]
 
             else:
                 self.connection.commit()
-                return json.dumps({"status":"ok", "rows_afetadas": cursor.rowcount}, ensure_ascii=False)
+                return {"status":"ok", "rows_afetadas": cursor.rowcount, "id": cursor.lastrowid}
 
         except Exception as e:
             print("[Banco] erro ao executar comando: ", e)

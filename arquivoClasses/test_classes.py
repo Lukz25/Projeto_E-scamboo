@@ -5,7 +5,7 @@ from arquivoClasses.classes import Autor, Genero, Titulo, Usuario
 
 class TestAutor(unittest.TestCase):
     def setUp(self):
-        self.ana = Usuario("Ana", "ana@example.com", "senha123", "11", "01000-000")
+        self.ana = Usuario("Ana", "ana@example.com", Usuario.gerar_hash("senha123"), "11", "01000-000")
         self.machado = Autor(1, "Machado de Assis")
         self.dom = Titulo(1, "Dom Casmurro", self.ana, [], [], "1899", "bom", "")
 
@@ -29,7 +29,7 @@ class TestAutor(unittest.TestCase):
 
 class TestTitulo(unittest.TestCase):
     def setUp(self):
-        self.ana = Usuario("Ana", "ana@example.com", "senha123", "11", "01000-000")
+        self.ana = Usuario("Ana", "ana@example.com", Usuario.gerar_hash("senha123"), "11", "01000-000")
         self.homero = Autor(1, "Homero")
         self.epico = Genero(1, "Épico")
         self.iliada = Titulo(1, "Ilíada", self.ana, [self.homero], [self.epico], "VIII a.C.", "novo", "")
@@ -65,14 +65,14 @@ class TestTitulo(unittest.TestCase):
 
 class TestUsuario(unittest.TestCase):
     def setUp(self):
-        self.ana = Usuario("Ana", "ana@example.com", "senha123", "11", "01000-000")
-        self.bia = Usuario("Bia", "bia@example.com", "senha123", "12", "02000-000")
+        self.ana = Usuario("Ana", "ana@example.com", Usuario.gerar_hash("senha123"), "11", "01000-000")
+        self.bia = Usuario("Bia", "bia@example.com", Usuario.gerar_hash("senha123"), "12", "02000-000")
         self.dom = Titulo(1, "Dom Casmurro", self.ana, [], [], "1899", "bom", "")
         self.bras = Titulo(2, "Brás Cubas", self.bia, [], [], "1881", "ótimo", "")
 
     def testEmailInvalido(self):
         with self.assertRaises(ValueError):
-            Usuario("X", "sem-arroba", "senha123", "11", "01000-000")
+            Usuario("X", "sem-arroba", Usuario.gerar_hash("senha123"), "11", "01000-000")
         with self.assertRaises(ValueError):
             self.ana.set_email("outro-sem-arroba")
         self.assertEqual(self.ana.get_email(), "ana@example.com")
@@ -85,6 +85,13 @@ class TestUsuario(unittest.TestCase):
         self.assertTrue(self.ana.verificar_senha("senha123"))
         self.assertFalse(self.ana.verificar_senha("errada"))
         self.assertFalse(self.ana.verificar_senha(""))
+
+    def testAlterarSenha(self):
+        self.ana.alterar_senha("nova456")
+        self.assertTrue(self.ana.verificar_senha("nova456"))
+        self.assertFalse(self.ana.verificar_senha("senha123"))
+        with self.assertRaises(ValueError):
+            self.ana.alterar_senha("")
 
     def testAdicionarTituloRepetido(self):
         with self.assertRaises(ValueError):
@@ -127,9 +134,9 @@ class TestUsuario(unittest.TestCase):
 
 class TestProposta(unittest.TestCase):
     def setUp(self):
-        self.ana = Usuario("Ana", "ana@example.com", "senha123", "11", "01000-000")
-        self.bia = Usuario("Bia", "bia@example.com", "senha123", "12", "02000-000")
-        self.caio = Usuario("Caio", "caio@example.com", "senha123", "13", "03000-000")
+        self.ana = Usuario("Ana", "ana@example.com", Usuario.gerar_hash("senha123"), "11", "01000-000")
+        self.bia = Usuario("Bia", "bia@example.com", Usuario.gerar_hash("senha123"), "12", "02000-000")
+        self.caio = Usuario("Caio", "caio@example.com", Usuario.gerar_hash("senha123"), "13", "03000-000")
         self.dom = Titulo(1, "Dom Casmurro", self.ana, [], [], "1899", "bom", "")
         self.bras = Titulo(2, "Brás Cubas", self.bia, [], [], "1881", "ótimo", "")
         self.quincas = Titulo(3, "Quincas Borba", self.bia, [], [], "1891", "regular", "")

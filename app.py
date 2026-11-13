@@ -1,9 +1,12 @@
 from flask import Flask
+from banco.classe_banco import Banco
 from rotas.routes_autor import bp_autor
 from rotas.routes_genero import bp_genero
 from rotas.routes_proposta import bp_proposta
 from rotas.routes_titulo import bp_titulo
 from rotas.routes_usuario import bp_usuario
+
+Banco().inicializar_Banco()
 
 app = Flask(__name__)
 app.secret_key = "e-scamboo-chave-secreta"

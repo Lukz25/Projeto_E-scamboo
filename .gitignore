@@ -1,0 +1,6 @@
+__pycache__/
+venv/
+.sf/
+E-scamboo.db
+E-scamboo.db-wal
+E-scamboo.db-shm
