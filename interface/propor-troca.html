@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Propor troca · E-scamboo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Lora:ital,wght@0,500;0,600;0,700;1,500;1,700&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tema.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div style="min-height:100%">
+
+  <header class="top" id="topo"></header>
+
+  <main class="page page-wide">
+    <div class="hd">
+      <a href="livros.html">← Voltar para Livros</a>
+      <h1>Propor troca</h1>
+    </div>
+
+    <p id="msg" class="msg" hidden></p>
+
+    <section class="exchange" aria-label="A troca">
+      <article class="card book-card" id="card-recebe"></article>
+      <div class="swapdot" role="img" aria-label="troca">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h17"></path><path d="M16 4l4 4-4 4"></path><path d="M21 16H4"></path><path d="M8 12l-4 4 4 4"></path></svg>
+      </div>
+      <article class="card book-card" id="card-oferece"></article>
+    </section>
+
+    <section class="card panel" aria-labelledby="t-meus">
+      <div class="panel-head">
+        <h2 id="t-meus">Seus livros</h2>
+        <p class="muted">Marque o que você quer oferecer. Pode ser mais de um.</p>
+      </div>
+      <div class="picks" id="picks"></div>
+    </section>
+
+    <section class="card panel">
+      <label class="fld fld-single">Observação <span class="hint">(opcional)</span>
+        <textarea class="inp inp-area inp-area-sm" rows="3" id="observacao"></textarea>
+      </label>
+      <div class="confirm">
+        <p class="muted" id="resumo"></p>
+        <div class="form-actions">
+          <a class="btn btn-lg" href="livros.html">Cancelar</a>
+          <button type="button" class="btn btn-p btn-xl" id="btn-confirmar">Confirmar troca</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+</div>
+<script src="js/comum.js"></script>
+<script>
+  const msg = document.getElementById('msg');
+  const picks = document.getElementById('picks');
+  const resumo = document.getElementById('resumo');
+  const botaoConfirmar = document.getElementById('btn-confirmar');
+  const idDesejado = Number(parametro('id'));
+
+  let desejado = null;
+  let meusLivros = [];
+
+  function cardLivro(titulo, etiqueta, souDono) {
+    const pills = [...titulo.generos, titulo.estado_conservacao].filter(Boolean)
+      .map(texto => `<span class="pill">${escapar(texto)}</span>`).join('');
+    return `
+      <span class="tag">${etiqueta}</span>
+      <div class="cover cover-big" role="img" aria-label="Capa do livro ${escapar(titulo.nome)}">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"></path><path d="M18 19v2H6"></path></svg>
+        <span class="cover-t">${escapar(titulo.nome)}</span>
+      </div>
+      <div class="book-info">
+        <h2>${escapar(titulo.nome)}</h2>
+        <p class="muted">${escapar([titulo.autores.join(', '), titulo.data_lancamento].filter(Boolean).join(' · '))}</p>
+      </div>
+      <div class="pills">${pills}</div>
+      <p>Dono: <strong>${escapar(titulo.dono_nome)}</strong>${souDono ? ' (você)' : ''}</p>
+      ${titulo.descricao ? `<p class="quote muted">${escapar(titulo.descricao)}</p>` : ''}`;
+  }
+
+  function selecionados() {
+    return [...picks.querySelectorAll('input:checked')].map(caixa => Number(caixa.value));
+  }
+
+  function atualizarResumo() {
+    const ids = selecionados();
+    picks.querySelectorAll('.pick').forEach(pick => {
+      pick.classList.toggle('pick-on', pick.querySelector('input').checked);
+    });
+
+    const cardOferece = document.getElementById('card-oferece');
+    if (ids.length === 0) {
+      cardOferece.innerHTML = '<span class="tag">Você oferece</span><p class="vazio">Marque abaixo os livros que você quer oferecer.</p>';
+      resumo.innerHTML = 'Escolha pelo menos um livro para oferecer.';
+    } else {
+      cardOferece.innerHTML = cardLivro(meusLivros.find(t => t.id === ids[0]), 'Você oferece', true);
+      const quantidade = ids.length === 1 ? '1 livro' : `${ids.length} livros`;
+      resumo.innerHTML = `Você oferece <strong>${quantidade}</strong> por <strong>${escapar(desejado.nome)}</strong>. ` +
+        `${escapar(desejado.dono_nome)} recebe a proposta e pode aceitar ou recusar.`;
+    }
+    botaoConfirmar.disabled = ids.length === 0;
+  }
+
+  botaoConfirmar.addEventListener('click', async () => {
+    try {
+      await api('POST', '/proposta/', {
+        titulo_desejado: idDesejado,
+        titulos_oferecidos: selecionados(),
+        observacao: document.getElementById('observacao').value.trim(),
+      });
+      location.href = 'propostas.html';
+    } catch (erro) {
+      mostrarMensagem(msg, erro.message, 'erro');
+    }
+  });
+
+  picks.addEventListener('change', atualizarResumo);
+
+  (async () => {
+    try {
+      const eu = await montarCabecalho('livros');
+      desejado = await api('GET', `/titulo/${idDesejado}`);
+      document.getElementById('card-recebe').innerHTML = cardLivro(desejado, 'Você recebe', desejado.dono === eu.email);
+      document.getElementById('observacao').placeholder = 'Ex.: Topa fazer essa troca?';
+
+      if (desejado.dono === eu.email) {
+        mostrarMensagem(msg, 'Este livro já é seu. Escolha um livro de outra pessoa na lista de livros.', 'erro');
+        botaoConfirmar.disabled = true;
+        return;
+      }
+
+      const todos = await api('GET', '/titulo/');
+      meusLivros = todos.filter(titulo => titulo.dono === eu.email);
+      picks.innerHTML = meusLivros.length === 0
+        ? '<p class="vazio">Você ainda não tem livros. <a href="novo-livro.html">Cadastre um livro</a> para poder oferecer.</p>'
+        : meusLivros.map(titulo => `
+            <label class="pick">
+              <input type="checkbox" value="${titulo.id}">
+              ${capa(titulo.nome, 'cover-mini')}
+              <span>${escapar(titulo.nome)}</span>
+            </label>`).join('');
+      atualizarResumo();
+    } catch (erro) {
+      mostrarMensagem(msg, erro.message, 'erro');
+      botaoConfirmar.disabled = true;
+    }
+  })();
+</script>
+</body>
+</html>

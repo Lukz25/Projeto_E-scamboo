@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrar · E-scamboo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Lora:ital,wght@0,500;0,600;0,700;1,500;1,700&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tema.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <main class="login-wrap">
+    <section class="card login-card">
+      <div class="brand">E-scamboo</div>
+      <p class="muted" style="text-align:center">Troque os livros que você já leu.</p>
+
+      <div class="seg" role="group" aria-label="Entrar ou criar conta">
+        <button type="button" id="aba-entrar" aria-pressed="true" style="flex:1">Entrar</button>
+        <button type="button" id="aba-criar" aria-pressed="false" style="flex:1">Criar conta</button>
+      </div>
+
+      <p id="msg" class="msg" hidden></p>
+
+      <form id="form-entrar">
+        <label class="fld fld-single">E-mail
+          <input class="inp" type="email" id="entrar-email" required autocomplete="username">
+        </label>
+        <label class="fld fld-single">Senha
+          <input class="inp" type="password" id="entrar-senha" required autocomplete="current-password">
+        </label>
+        <button type="submit" class="btn btn-p btn-lg">Entrar</button>
+        <p class="muted login-dica">Para testar: <strong>ana@example.com</strong> / <strong>ana123</strong></p>
+      </form>
+
+      <form id="form-criar" hidden>
+        <label class="fld fld-single">Nome
+          <input class="inp" type="text" id="criar-nome" required>
+        </label>
+        <label class="fld fld-single">E-mail
+          <input class="inp" type="email" id="criar-email" required autocomplete="username">
+        </label>
+        <label class="fld fld-single">Senha
+          <input class="inp" type="password" id="criar-senha" required autocomplete="new-password">
+        </label>
+        <div class="pair">
+          <label class="fld">Telefone
+            <input class="inp" type="text" id="criar-telefone" placeholder="(11) 90000-0000">
+          </label>
+          <label class="fld">CEP
+            <input class="inp" type="text" id="criar-cep" placeholder="01001-000">
+          </label>
+        </div>
+        <button type="submit" class="btn btn-p btn-lg">Criar conta</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="js/comum.js"></script>
+  <script>
+    const msg = document.getElementById('msg');
+    const formEntrar = document.getElementById('form-entrar');
+    const formCriar = document.getElementById('form-criar');
+    const abaEntrar = document.getElementById('aba-entrar');
+    const abaCriar = document.getElementById('aba-criar');
+
+    function trocarAba(criar) {
+      formEntrar.hidden = criar;
+      formCriar.hidden = !criar;
+      abaEntrar.setAttribute('aria-pressed', String(!criar));
+      abaCriar.setAttribute('aria-pressed', String(criar));
+      msg.hidden = true;
+    }
+    abaEntrar.addEventListener('click', () => trocarAba(false));
+    abaCriar.addEventListener('click', () => trocarAba(true));
+
+    async function entrar(email, senha) {
+      const resposta = await fetch('/usuario/Logar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha }),
+      });
+      if (resposta.ok) {
+        location.href = 'livros.html';
+      } else {
+        mostrarMensagem(msg, 'E-mail ou senha incorretos.', 'erro');
+      }
+    }
+
+    formEntrar.addEventListener('submit', event => {
+      event.preventDefault();
+      entrar(document.getElementById('entrar-email').value.trim(), document.getElementById('entrar-senha').value);
+    });
+
+    formCriar.addEventListener('submit', async event => {
+      event.preventDefault();
+      const email = document.getElementById('criar-email').value.trim();
+      const senha = document.getElementById('criar-senha').value;
+      try {
+        await api('POST', '/usuario/', {
+          nome: document.getElementById('criar-nome').value.trim(),
+          email,
+          senha,
+          telefone: document.getElementById('criar-telefone').value.trim(),
+          cep: document.getElementById('criar-cep').value.trim(),
+        });
+        await entrar(email, senha);
+      } catch (erro) {
+        mostrarMensagem(msg, erro.message, 'erro');
+      }
+    });
+  </script>
+</body>
+</html>

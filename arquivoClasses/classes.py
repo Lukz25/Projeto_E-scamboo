@@ -395,6 +395,11 @@ class Proposta:
     def esta_pendente(self) -> bool:
         return self.situacao == "pendente"
 
+    def dono(self) -> Usuario:
+        if self.situacao == "aceita" and self.titulos_oferecidos:
+            return self.titulos_oferecidos[0].usuario
+        return self.titulo_desejado.usuario
+
     def aceitar_proposta(self, usuario: Usuario) -> None:
         self.__validar_dono(usuario)
         self.__trocar_titulos()

@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Livros · E-scamboo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Lora:ital,wght@0,500;0,600;0,700;1,500;1,700&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tema.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div style="min-height:100%">
+
+  <header class="top" id="topo"></header>
+
+  <main class="page">
+    <div class="bar">
+      <div class="hd">
+        <a href="livros.html" id="voltar-todos" hidden>← Voltar para todos os livros</a>
+        <h1 id="titulo-pagina">Livros</h1>
+      </div>
+      <a class="btn btn-p btn-lg" href="novo-livro.html">+ Novo livro</a>
+    </div>
+
+    <p id="msg" class="msg" hidden></p>
+
+    <div class="filters">
+      <div class="seg" id="seg-visao" role="group" aria-label="Quais livros mostrar">
+        <button type="button" id="ver-todos" aria-pressed="true">Todos</button>
+        <button type="button" id="ver-meus" aria-pressed="false">Meus</button>
+      </div>
+      <label class="lbl lbl-grow">Buscar por título ou autor
+        <div class="search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5a4f31" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+          <input class="inp" type="search" id="busca" placeholder="Ex.: Machado de Assis">
+        </div>
+      </label>
+      <label class="lbl">Gênero
+        <select class="inp inp-sel" id="filtro-genero"><option value="">Todos os gêneros</option></select>
+      </label>
+      <label class="lbl">Conservação
+        <select class="inp inp-sel" id="filtro-conservacao">
+          <option value="">Todas</option><option>novo</option><option>bom</option><option>regular</option><option>desgastado</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="sheet">
+      <table class="t-books">
+        <thead>
+          <tr><th>ID</th><th>Título</th><th>Autor(es)</th><th>Gênero(s)</th><th>Lançamento</th><th>Conservação</th><th>Dono</th><th>Ações</th></tr>
+        </thead>
+        <tbody id="linhas"></tbody>
+      </table>
+    </div>
+  </main>
+
+</div>
+<script src="js/comum.js"></script>
+<script>
+  const msg = document.getElementById('msg');
+  const linhas = document.getElementById('linhas');
+  const busca = document.getElementById('busca');
+  const filtroGenero = document.getElementById('filtro-genero');
+  const filtroConservacao = document.getElementById('filtro-conservacao');
+  const verTodos = document.getElementById('ver-todos');
+  const verMeus = document.getElementById('ver-meus');
+  const donoFiltro = parametro('dono');
+
+  let eu = null;
+  let titulos = [];
+  let soMeus = false;
+
+  function passaNosFiltros(titulo) {
+    if (soMeus && titulo.dono !== eu.email) return false;
+    if (donoFiltro && titulo.dono !== donoFiltro) return false;
+    if (filtroGenero.value && !titulo.generos_ids.includes(Number(filtroGenero.value))) return false;
+    if (filtroConservacao.value && titulo.estado_conservacao !== filtroConservacao.value) return false;
+    const texto = busca.value.trim().toLowerCase();
+    if (texto) {
+      const onde = (titulo.nome + ' ' + titulo.autores.join(' ')).toLowerCase();
+      if (!onde.includes(texto)) return false;
+    }
+    return true;
+  }
+
+  function acoes(titulo) {
+    if (titulo.dono === eu.email) {
+      return `<div class="actions">
+        <a class="btn" href="editar-livro.html?id=${titulo.id}">Editar</a>
+        <button type="button" class="btn btn-d" data-excluir="${titulo.id}">Excluir</button>
+      </div>`;
+    }
+    const favorito = eu.favoritos_ids.includes(titulo.id);
+    return `<div class="actions">
+      <a class="btn btn-p" href="propor-troca.html?id=${titulo.id}">Propor troca</a>
+      <button type="button" class="btn btn-fav" data-favorito="${titulo.id}" aria-pressed="${favorito}"
+        title="${favorito ? 'Desfavoritar' : 'Favoritar'}" aria-label="${favorito ? 'Desfavoritar' : 'Favoritar'}">${favorito ? '★' : '☆'}</button>
+    </div>`;
+  }
+
+  function desenhar() {
+    const meus = titulos.filter(titulo => titulo.dono === eu.email).length;
+    verTodos.textContent = `Todos (${titulos.length})`;
+    verMeus.textContent = `Meus (${meus})`;
+
+    const visiveis = titulos.filter(passaNosFiltros);
+    if (visiveis.length === 0) {
+      linhas.innerHTML = '<tr><td colspan="8" class="vazio">Nenhum livro encontrado.</td></tr>';
+      return;
+    }
+    linhas.innerHTML = visiveis.map(titulo => `
+      <tr>
+        <td class="muted">${titulo.id}</td>
+        <td class="bt">${escapar(titulo.nome)}</td>
+        <td>${escapar(titulo.autores.join(', ')) || '<span class="muted">—</span>'}</td>
+        <td>${escapar(titulo.generos.join(', ')) || '<span class="muted">—</span>'}</td>
+        <td>${escapar(titulo.data_lancamento)}</td>
+        <td>${titulo.estado_conservacao ? `<span class="pill">${escapar(titulo.estado_conservacao)}</span>` : ''}</td>
+        <td>${escapar(titulo.dono_nome)}${titulo.dono === eu.email ? ' <span class="muted">(você)</span>' : ''}</td>
+        <td>${acoes(titulo)}</td>
+      </tr>`).join('');
+  }
+
+  async function carregar() {
+    titulos = await api('GET', '/titulo/');
+    desenhar();
+  }
+
+  function escolherVisao(meus) {
+    soMeus = meus;
+    verTodos.setAttribute('aria-pressed', String(!meus));
+    verMeus.setAttribute('aria-pressed', String(meus));
+    desenhar();
+  }
+
+  verTodos.addEventListener('click', () => escolherVisao(false));
+  verMeus.addEventListener('click', () => escolherVisao(true));
+  busca.addEventListener('input', desenhar);
+  filtroGenero.addEventListener('change', desenhar);
+  filtroConservacao.addEventListener('change', desenhar);
+
+  linhas.addEventListener('click', async event => {
+    const excluir = event.target.closest('[data-excluir]');
+    const favoritar = event.target.closest('[data-favorito]');
+    try {
+      if (excluir) {
+        const titulo = titulos.find(t => t.id === Number(excluir.dataset.excluir));
+        if (!confirm(`Excluir "${titulo.nome}"?`)) return;
+        await api('DELETE', `/titulo/${titulo.id}`);
+        mostrarMensagem(msg, `"${titulo.nome}" foi excluído.`, 'ok');
+        await carregar();
+      }
+      if (favoritar) {
+        const id = Number(favoritar.dataset.favorito);
+        const metodo = eu.favoritos_ids.includes(id) ? 'DELETE' : 'POST';
+        eu = await api(metodo, `/usuario/favoritos/${id}`);
+        desenhar();
+      }
+    } catch (erro) {
+      mostrarMensagem(msg, erro.message, 'erro');
+    }
+  });
+
+  (async () => {
+    try {
+      eu = await montarCabecalho('livros');
+      const generos = await api('GET', '/genero/');
+      filtroGenero.innerHTML += generos.map(g => `<option value="${g.id}">${escapar(g.nome)}</option>`).join('');
+      if (donoFiltro) {
+        const dono = await api('GET', `/usuario/${encodeURIComponent(donoFiltro)}`);
+        document.getElementById('titulo-pagina').textContent = donoFiltro === eu.email ? 'Seus livros' : `Livros de ${dono.nome}`;
+        document.getElementById('seg-visao').hidden = true;
+        document.getElementById('voltar-todos').hidden = false;
+      }
+      await carregar();
+    } catch (erro) {
+      mostrarMensagem(msg, erro.message, 'erro');
+    }
+  })();
+</script>
+</body>
+</html>

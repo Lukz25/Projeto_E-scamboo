@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Usuários · E-scamboo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Lora:ital,wght@0,500;0,600;0,700;1,500;1,700&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tema.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div style="min-height:100%">
+
+  <header class="top" id="topo"></header>
+
+  <main class="page">
+    <div class="hd"><h1>Usuários</h1></div>
+
+    <p id="msg" class="msg" hidden></p>
+
+    <div class="sheet">
+      <table class="t-users">
+        <thead>
+          <tr><th>Nome</th><th>E-mail</th><th>Telefone</th><th>CEP</th><th>Livros</th><th>Favoritos</th><th>Ações</th></tr>
+        </thead>
+        <tbody id="linhas"></tbody>
+      </table>
+    </div>
+  </main>
+
+</div>
+<script src="js/comum.js"></script>
+<script>
+  (async () => {
+    const msg = document.getElementById('msg');
+    try {
+      const eu = await montarCabecalho('usuarios');
+      const usuarios = await api('GET', '/usuario/');
+      document.getElementById('linhas').innerHTML = usuarios.map(usuario => `
+        <tr>
+          <td><div class="person"><span class="av" aria-hidden="true">${escapar(iniciais(usuario.nome))}</span><span class="bt">${escapar(usuario.nome)}${usuario.email === eu.email ? ' <span class="you">(você)</span>' : ''}</span></div></td>
+          <td>${escapar(usuario.email)}</td>
+          <td>${escapar(usuario.telefone)}</td>
+          <td>${escapar(usuario.cep)}</td>
+          <td>${usuario.biblioteca.length}</td>
+          <td>${usuario.favoritos.length}</td>
+          <td><a class="btn" href="livros.html?dono=${encodeURIComponent(usuario.email)}">Ver livros</a></td>
+        </tr>`).join('');
+    } catch (erro) {
+      mostrarMensagem(msg, erro.message, 'erro');
+    }
+  })();
+</script>
+</body>
+</html>

@@ -16,7 +16,9 @@ def usuario_para_json(usuario: Usuario) -> dict:
         "telefone": usuario.telefone,
         "cep": usuario.cep,
         "biblioteca": [titulo.nome for titulo in usuario.biblioteca],
+        "biblioteca_ids": [titulo.id for titulo in usuario.biblioteca],
         "favoritos": [titulo.nome for titulo in usuario.favoritos],
+        "favoritos_ids": [titulo.id for titulo in usuario.favoritos],
     }
 
 @bp_usuario.route("/Logar", methods=['POST'])
@@ -38,6 +40,13 @@ def Logar():
 def Deslogar():
     session.pop('usuario', None)
     return jsonify({'situacao':True}), 200
+
+@bp_usuario.route("/logado", methods=['GET'])
+def logado():
+    usuario = usuario_logado()
+    if usuario is None:
+        return jsonify({'erro': 'Faça login primeiro.'}), 401
+    return jsonify(usuario_para_json(usuario)), 200
 
 @bp_usuario.route("/", methods=['GET'])
 def listar():

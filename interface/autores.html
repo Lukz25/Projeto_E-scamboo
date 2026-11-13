@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Autores · E-scamboo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Lora:ital,wght@0,500;0,600;0,700;1,500;1,700&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tema.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div style="min-height:100%">
+
+  <header class="top" id="topo"></header>
+
+  <main class="page page-form">
+    <div class="hd"><h1>Autores</h1></div>
+
+    <p id="msg" class="msg" hidden></p>
+
+    <form class="card form-linha" id="form-novo">
+      <label class="lbl">Novo autor
+        <input class="inp" type="text" id="nome-novo" placeholder="Ex.: Clarice Lispector" required>
+      </label>
+      <button type="submit" class="btn btn-p btn-lg">+ Cadastrar autor</button>
+    </form>
+
+    <div class="sheet">
+      <table>
+        <thead><tr><th>ID</th><th>Nome</th><th>Obras</th><th>Ações</th></tr></thead>
+        <tbody id="linhas"></tbody>
+      </table>
+    </div>
+  </main>
+
+</div>
+<script src="js/comum.js"></script>
+<script src="js/cadastro.js"></script>
+<script>
+  iniciarCadastro({
+    pagina: 'autores',
+    url: '/autor/',
+    rotulo: 'autor',
+    pertence: (titulo, autor) => titulo.autores_ids.includes(autor.id),
+  });
+</script>
+</body>
+</html>

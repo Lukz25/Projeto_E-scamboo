@@ -19,7 +19,7 @@ class Banco:
             return
         
         try:
-            self.__Conectar()
+            self.connection = self.__Conectar()
             with open(self.__script, "r", encoding="utf-8") as f:
                 self.connection.executescript(f.read())
 
@@ -44,11 +44,12 @@ class Banco:
             self.Desconectar()
 
 
-    def __Conectar(self):
+    def __Conectar(self) -> sqlite3.Connection:
         try:
-            self.connection = sqlite3.connect(self.__caminho)
-            self.connection.row_factory = sqlite3.Row  
-            self.connection.execute("PRAGMA foreign_keys = ON")
+            conexao = sqlite3.connect(self.__caminho)
+            conexao.row_factory = sqlite3.Row
+            conexao.execute("PRAGMA foreign_keys = ON")
+            return conexao
 
         except Exception as e:
             print("[Banco] erro ao conectar: ", e)
@@ -60,11 +61,12 @@ class Banco:
             self.connection.close()
             self.connection = None
 
+    # Cada chamada usa a sua própria conexão: o Flask atende várias requisições ao mesmo tempo
     def Executar(self, comando:str, parameters: Iterable[Any]|dict = (), busca:bool = True):
 
+        conexao = self.__Conectar()
         try:
-            self.__Conectar()
-            cursor = self.connection.cursor()
+            cursor = conexao.cursor()
 
             cursor.execute(comando, parameters)
 
@@ -72,7 +74,7 @@ class Banco:
                 return [dict(row) for row in cursor.fetchall()]
 
             else:
-                self.connection.commit()
+                conexao.commit()
                 return {"status":"ok", "rows_afetadas": cursor.rowcount, "id": cursor.lastrowid}
 
         except Exception as e:
@@ -80,4 +82,4 @@ class Banco:
             raise
 
         finally:
-            self.Desconectar()
+            conexao.close()

@@ -5,12 +5,17 @@ from rotas.routes_usuario import usuario_logado
 bp_proposta = Blueprint("/proposta/", "__name__", url_prefix= "/proposta")
 
 def proposta_para_json(proposta: Proposta) -> dict:
+    dono = proposta.dono()
     return {
         "id": proposta.id,
         "interessado": proposta.interessado.get_email(),
+        "interessado_nome": proposta.interessado.nome,
         "titulo_desejado": proposta.titulo_desejado.nome,
-        "dono": proposta.titulo_desejado.usuario.get_email(),
+        "titulo_desejado_id": proposta.titulo_desejado.id,
+        "dono": dono.get_email(),
+        "dono_nome": dono.nome,
         "titulos_oferecidos": [titulo.nome for titulo in proposta.titulos_oferecidos],
+        "titulos_oferecidos_ids": [titulo.id for titulo in proposta.titulos_oferecidos],
         "observacao": proposta.observacao,
         "data_criacao": proposta.data_criacao.isoformat(),
         "situacao": proposta.situacao,

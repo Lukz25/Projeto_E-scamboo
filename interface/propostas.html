@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Propostas · E-scamboo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Lora:ital,wght@0,500;0,600;0,700;1,500;1,700&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tema.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div style="min-height:100%">
+
+  <header class="top" id="topo"></header>
+
+  <main class="page page-wide">
+    <div class="hd"><h1>Suas propostas</h1></div>
+
+    <p id="msg" class="msg" hidden></p>
+
+    <div class="tabbar">
+      <nav class="tabs" aria-label="Seções">
+        <a class="tab tab-on" href="#t-rec" id="aba-rec">Recebidas</a>
+        <a class="tab" href="#t-env" id="aba-env">Enviadas</a>
+      </nav>
+      <label class="lbl-inline">Situação
+        <select class="inp inp-sm" id="filtro-situacao">
+          <option value="">Todas</option><option>pendente</option><option>aceita</option><option>recusada</option><option>cancelada</option>
+        </select>
+      </label>
+    </div>
+
+    <section class="section" id="sec-rec" aria-labelledby="t-rec">
+      <div class="section-head">
+        <h2 id="t-rec">Recebidas</h2>
+        <span class="muted">Pedidos de troca pelos seus livros</span>
+      </div>
+      <div class="section" id="lista-rec"></div>
+    </section>
+
+    <section class="section" id="sec-env" aria-labelledby="t-env" hidden>
+      <div class="section-head">
+        <h2 id="t-env">Enviadas</h2>
+        <span class="muted">Propostas que você fez</span>
+      </div>
+      <div class="section" id="lista-env"></div>
+    </section>
+  </main>
+
+</div>
+<script src="js/comum.js"></script>
+<script>
+  const msg = document.getElementById('msg');
+  const filtroSituacao = document.getElementById('filtro-situacao');
+  const abaRec = document.getElementById('aba-rec');
+  const abaEnv = document.getElementById('aba-env');
+
+  const SETA = '<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h17"></path><path d="M16 4l4 4-4 4"></path><path d="M21 16H4"></path><path d="M8 12l-4 4 4 4"></path></svg>';
+  const CLASSE_SITUACAO = { pendente: 'st-pend', aceita: 'st-ok', recusada: 'st-no', cancelada: 'st-off' };
+
+  let eu = null;
+  let propostas = [];
+  let livrosPorId = {};
+
+  function figura(id, nome, rotulo) {
+    const livro = livrosPorId[id];
+    const detalhes = livro
+      ? `<span class="muted">${escapar(livro.autores.join(', '))}</span>${livro.estado_conservacao ? `<span class="pill">${escapar(livro.estado_conservacao)}</span>` : ''}`
+      : '';
+    return `
+      <figure class="it">
+        <span class="k">${rotulo}</span>
+        ${capa(nome, 'cover-lg')}
+        <figcaption><strong class="bt">${escapar(nome)}</strong>${detalhes}</figcaption>
+      </figure>`;
+  }
+
+  function figuras(ids, nomes, rotulo) {
+    return ids.map((id, i) => figura(id, nomes[i], rotulo)).join('');
+  }
+
+  function cartao(proposta, recebida) {
+    const pendente = proposta.situacao === 'pendente';
+    const fechadaSemTroca = proposta.situacao === 'recusada' || proposta.situacao === 'cancelada';
+    const outro = recebida ? proposta.interessado_nome : proposta.dono_nome;
+
+    const titulos = {
+      pendente: recebida ? 'Aguardando sua resposta' : `Aguardando resposta de ${outro}`,
+      aceita: 'Troca realizada',
+      recusada: recebida ? 'Você recusou esta proposta' : `Recusada por ${outro}`,
+      cancelada: recebida ? `Cancelada por ${outro}` : 'Você cancelou esta proposta',
+    };
+
+    const entrega = recebida
+      ? figura(proposta.titulo_desejado_id, proposta.titulo_desejado, fechadaSemTroca ? 'Você entregaria' : (pendente ? 'Você entrega' : 'Você entregou'))
+      : figuras(proposta.titulos_oferecidos_ids, proposta.titulos_oferecidos, fechadaSemTroca ? 'Você entregaria' : (pendente ? 'Você entrega' : 'Você entregou'));
+    const recebe = recebida
+      ? figuras(proposta.titulos_oferecidos_ids, proposta.titulos_oferecidos, fechadaSemTroca ? 'Você receberia' : (pendente ? 'Você recebe' : 'Você recebeu'))
+      : figura(proposta.titulo_desejado_id, proposta.titulo_desejado, fechadaSemTroca ? 'Você receberia' : (pendente ? 'Você recebe' : 'Você recebeu'));
+
+    let observacao = '';
+    if (proposta.observacao) {
+      const rotulo = recebida ? `Observação de ${escapar(proposta.interessado_nome)}` : 'Sua observação';
+      observacao = `<div class="order-info-item"><span class="k">${rotulo}</span><p class="quote">“${escapar(proposta.observacao)}”</p></div>`;
+    }
+    let aviso = '';
+    if (pendente && recebida) aviso = '<p class="muted">Ao aceitar, os livros trocam de dono.</p>';
+    if (fechadaSemTroca) aviso = '<p class="muted">Proposta encerrada. Os livros continuam com os donos de antes.</p>';
+    if (proposta.situacao === 'aceita') aviso = '<p class="muted">Os livros já trocaram de dono.</p>';
+
+    let botoes = '';
+    if (pendente && recebida) {
+      botoes = `<div class="order-actions">
+        <button type="button" class="btn btn-p btn-lg" data-acao="aceitar" data-id="${proposta.id}">Aceitar troca</button>
+        <button type="button" class="btn btn-d btn-lg" data-acao="recusar" data-id="${proposta.id}">Recusar proposta</button>
+      </div>`;
+    }
+    if (pendente && !recebida) {
+      botoes = `<div class="order-actions">
+        <button type="button" class="btn btn-d btn-lg" data-acao="cancelar" data-id="${proposta.id}">Cancelar proposta</button>
+      </div>`;
+    }
+
+    return `
+      <article class="order" aria-labelledby="p${proposta.id}">
+        <div class="strip">
+          <div class="sc"><span class="k">Proposta feita em</span><span>${formatarData(proposta.data_criacao)}</span></div>
+          <div class="sc"><span class="k">${recebida ? 'Interessado' : 'Dono do livro'}</span><span>${escapar(outro)}</span></div>
+          <div class="sc"><span class="k">Situação</span><span><span class="st ${CLASSE_SITUACAO[proposta.situacao]}">${proposta.situacao}</span></span></div>
+          <div class="sc sc-end"><span class="k">Proposta nº</span><span>${proposta.id}</span></div>
+        </div>
+        <div class="order-body">
+          <h3 id="p${proposta.id}">${escapar(titulos[proposta.situacao])}</h3>
+          <div class="order-row">
+            <div class="swap">
+              <div class="swap">${entrega}</div>
+              <div class="${fechadaSemTroca ? 'arrows-off' : 'arrows'}" role="img" aria-label="troca por">${SETA}</div>
+              <div class="swap">${recebe}</div>
+            </div>
+            <div class="order-info">${observacao}${aviso}</div>
+            ${botoes}
+          </div>
+        </div>
+      </article>`;
+  }
+
+  function desenhar() {
+    const situacao = filtroSituacao.value;
+    const recebidas = propostas.filter(p => p.dono === eu.email && p.interessado !== eu.email);
+    const enviadas = propostas.filter(p => p.interessado === eu.email);
+    abaRec.textContent = `Recebidas (${recebidas.length})`;
+    abaEnv.textContent = `Enviadas (${enviadas.length})`;
+
+    const lista = (itens, recebida, vazio) => {
+      const filtradas = itens.filter(p => !situacao || p.situacao === situacao);
+      return filtradas.length ? filtradas.map(p => cartao(p, recebida)).join('') : `<p class="card vazio">${vazio}</p>`;
+    };
+    document.getElementById('lista-rec').innerHTML = lista(recebidas, true, 'Nenhuma proposta recebida.');
+    document.getElementById('lista-env').innerHTML = lista(enviadas, false, 'Você ainda não fez propostas.');
+  }
+
+  async function carregar() {
+    const [listaPropostas, livros] = await Promise.all([api('GET', '/proposta/'), api('GET', '/titulo/')]);
+    propostas = listaPropostas.reverse();
+    livrosPorId = Object.fromEntries(livros.map(livro => [livro.id, livro]));
+    desenhar();
+  }
+
+  function mostrarAba(recebidas) {
+    document.getElementById('sec-rec').hidden = !recebidas;
+    document.getElementById('sec-env').hidden = recebidas;
+    abaRec.classList.toggle('tab-on', recebidas);
+    abaEnv.classList.toggle('tab-on', !recebidas);
+  }
+  abaRec.addEventListener('click', event => { event.preventDefault(); mostrarAba(true); });
+  abaEnv.addEventListener('click', event => { event.preventDefault(); mostrarAba(false); });
+  filtroSituacao.addEventListener('change', desenhar);
+
+  document.querySelector('main').addEventListener('click', async event => {
+    const botao = event.target.closest('[data-acao]');
+    if (!botao) return;
+    const acao = botao.dataset.acao;
+    const textos = { aceitar: 'Aceitar a troca? Os livros vão trocar de dono.', recusar: 'Recusar esta proposta?', cancelar: 'Cancelar esta proposta?' };
+    if (!confirm(textos[acao])) return;
+    try {
+      await api('POST', `/proposta/${botao.dataset.id}/${acao}`);
+      const feitos = { aceitar: 'Troca realizada!', recusar: 'Proposta recusada.', cancelar: 'Proposta cancelada.' };
+      mostrarMensagem(msg, feitos[acao], 'ok');
+      await carregar();
+    } catch (erro) {
+      mostrarMensagem(msg, erro.message, 'erro');
+    }
+  });
+
+  (async () => {
+    try {
+      eu = await montarCabecalho('propostas');
+      if (location.hash === '#t-env') mostrarAba(false);
+      await carregar();
+    } catch (erro) {
+      mostrarMensagem(msg, erro.message, 'erro');
+    }
+  })();
+</script>
+</body>
+</html>

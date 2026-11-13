@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Editar livro · E-scamboo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Lora:ital,wght@0,500;0,600;0,700;1,500;1,700&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tema.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div style="min-height:100%">
+
+  <header class="top" id="topo"></header>
+
+  <main class="page page-form">
+    <div class="hd">
+      <a href="livros.html">← Voltar para Livros</a>
+      <h1>Editar livro</h1>
+    </div>
+
+    <p id="msg" class="msg" hidden></p>
+
+    <form class="card form" id="form-livro">
+      <div class="form-body">
+        <div class="form-side">
+          <span id="lbl-capa" class="lbl-title">Capa do livro</span>
+          <div class="cover cover-lg" role="img" aria-labelledby="lbl-capa">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"></path><path d="M18 19v2H6"></path></svg>
+            <span class="cover-t" id="capa-titulo"></span>
+          </div>
+        </div>
+
+        <div class="form-main">
+          <label class="fld fld-single">Título
+            <input class="inp" type="text" id="nome" required>
+          </label>
+
+          <div class="pair">
+            <div class="fld">
+              <span id="lbl-autores">Autor(es)</span>
+              <div class="multi" id="caixa-autores" role="group" aria-labelledby="lbl-autores"></div>
+              <select class="inp add-sel" id="add-autor" aria-label="Adicionar autor"></select>
+            </div>
+            <div class="fld">
+              <span id="lbl-generos">Gênero(s)</span>
+              <div class="multi" id="caixa-generos" role="group" aria-labelledby="lbl-generos"></div>
+              <select class="inp add-sel" id="add-genero" aria-label="Adicionar gênero"></select>
+            </div>
+          </div>
+
+          <div class="pair">
+            <label class="fld">Data de lançamento
+              <input class="inp" type="text" id="data">
+            </label>
+            <label class="fld">Estado de conservação
+              <select class="inp" id="estado"><option value="">Selecione</option><option>novo</option><option>bom</option><option>regular</option><option>desgastado</option></select>
+            </label>
+          </div>
+
+          <label class="fld fld-single">Descrição <span class="hint">(opcional)</span>
+            <textarea class="inp inp-area" rows="4" id="descricao"></textarea>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-foot">
+        <button type="button" class="btn btn-d btn-lg" id="btn-excluir">Excluir livro</button>
+        <div class="form-actions">
+          <a class="btn btn-lg" href="livros.html">Cancelar</a>
+          <button type="submit" class="btn btn-p btn-lg">Salvar alterações</button>
+        </div>
+      </div>
+    </form>
+  </main>
+
+</div>
+<script src="js/comum.js"></script>
+<script src="js/livro-form.js"></script>
+<script>iniciarFormularioLivro(parametro('id'));</script>
+</body>
+</html>
